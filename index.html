@@ -188,9 +188,7 @@ textarea{min-height:90px;resize:vertical}
 
 <div class="sheet" id="shSet"><div class="sin"><div class="sh"><h2>⚙️ ਸੈਟਿੰਗਜ਼</h2><button class="x" data-close>✖</button></div>
   <label class="f">Gemini API key (<a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--green2)">ਇੱਥੋਂ ਮੁਫ਼ਤ ਲਓ</a>)</label><input type="password" id="sKey" autocomplete="off">
-  <label class="f">ਮਾਡਲ (AI)</label><select id="sModel"><option value="gemini-3.8-flash">Gemini 3.8 Flash (ਨਵਾਂ, ਸਿਫ਼ਾਰਸ਼ੀ)</option><option value="gemini-2.5-flash-lite">2.5 Flash-Lite</option></select>
-  <div class="brow" style="margin-top:6px"><button class="btn alt sm" id="sModels">🔄 ਉਪਲਬਧ ਮਾਡਲਾਂ ਦੀ ਸੂਚੀ ਲਿਆਓ</button></div>
-  <p class="small">ਜੇ “model not found / no longer available” ਦੀ ਗਲਤੀ ਆਵੇ, ਇਹ ਬਟਨ ਦਬਾ ਕੇ ਸੂਚੀ ਵਿੱਚੋਂ ਨਵਾਂ Flash ਮਾਡਲ ਚੁਣੋ।</p>
+  <label class="f">ਮਾਡਲ</label><select id="sModel"><option value="gemini-2.5-flash">2.5 Flash (ਸਭ ਤੋਂ ਵਧੀਆ)</option><option value="gemini-2.5-flash-lite">2.5 Flash-Lite (ਵੱਧ ਮੁਫ਼ਤ ਕੋਟਾ)</option><option value="gemini-2.0-flash">2.0 Flash</option></select>
   <label class="f">ਰੋਜ਼ਾਨਾ ਟੀਚਾ (ਪੰਨੇ)</label><select id="sGoal"><option>5</option><option>10</option><option>20</option></select>
   <label class="f">ਥੀਮ</label><select id="sTheme"><option value="light">ਹਲਕਾ (ਕਰੀਮ)</option><option value="sepia">ਸੇਪੀਆ</option><option value="dark">ਗੂੜ੍ਹਾ</option><option value="black">ਕਾਲਾ (AMOLED)</option></select>
   <div class="sw"><span>ਪੰਜਾਬੀ ਲਈ ਸੈਰਿਫ਼ ਫ਼ੌਂਟ</span><input type="checkbox" id="sSerif"></div>
@@ -246,9 +244,8 @@ const cleanWord=w=>w.replace(/^[\s"'“”‘’.,;:!?()\[\]।—\-]+|[\s"'“�
 /* =====================================================================
    SETTINGS + STATS
 ===================================================================== */
-const DEF={model:'gemini-3.8-flash',theme:'light',auto:true,goal:10,vol:false,wake:true,imm:false,fs:20,serif:true,rate:1,zoom:1,view:'both'};
+const DEF={model:'gemini-2.5-flash',theme:'light',auto:true,goal:10,vol:false,wake:true,imm:false,fs:20,serif:true,rate:1,zoom:1,view:'both'};
 const S=Object.assign({},DEF,ls.get('ptr_s',{}));
-if(S.model==='gemini-2.5-flash'||S.model==='gemini-2.0-flash')S.model=DEF.model;
 const saveS=()=>ls.set('ptr_s',S);
 function applyTheme(){document.documentElement.dataset.theme=S.theme;$('themeMeta').content=S.theme==='light'||S.theme==='sepia'?'#2c5f2d':'#000';document.documentElement.style.setProperty('--fs',S.fs+'px');$('trbody').classList.toggle('serif',S.serif)}
 const ST=Object.assign({days:{},seenDay:'',seen:{},translated:0,total:0,best:0,ach:{},finished:{},words:0,quizPerfect:false,night:false},ls.get('ptr_stats',{}));
@@ -296,7 +293,7 @@ async function gem(contents,{system,json,temp=0.3,tries=3}={}){
    if(!t.trim()){if(a===tries)throw new Error('ਖਾਲੀ ਜਵਾਬ ਮਿਲਿਆ (ਸ਼ਾਇਦ ਸੁਰੱਖਿਆ ਫ਼ਿਲਟਰ)');continue}return t.trim()}
   if((r.status===429||r.status>=500)&&a<tries){busy('⏳ ਸੀਮਾ ਪੁੱਜ ਗਈ, ਉਡੀਕ ਰਹੇ ਹਾਂ…');await wait(6000*(a+1));busy('');continue}
   let m='';try{m=(await r.json()).error.message}catch(e){}
-  throw new Error('API '+r.status+(m?': '+m.slice(0,140):'')+(r.status===404?' — ⚙️ ਸੈਟਿੰਗਜ਼ ਵਿੱਚ “ਮਾਡਲਾਂ ਦੀ ਸੂਚੀ ਲਿਆਓ” ਦਬਾ ਕੇ ਨਵਾਂ ਮਾਡਲ ਚੁਣੋ':''))}
+  throw new Error('API '+r.status+(m?': '+m.slice(0,140):''))}
 }
 const U=t=>[{role:'user',parts:[{text:t}]}];
 function needKey(e){if(e&&e.message==='NOKEY'){toast('⚙️ ਪਹਿਲਾਂ Gemini API key ਪਾਓ',3500);openSettings();return true}return false}
@@ -669,16 +666,7 @@ async function lessonHome(){const p=$('p-lesson');const c=ls.get('ptr_lesson',nu
 /* =====================================================================
    SETTINGS / STATS / BACKUP
 ===================================================================== */
-function ensureOpt(id){const s=$('sModel');if(![...s.options].some(o=>o.value===id)){const o=document.createElement('option');o.value=id;o.textContent=id;s.appendChild(o)}}
-$('sModels').onclick=async()=>{const key=($('sKey').value||ls.get('ptr_key','')).trim();if(!key)return toast('ਪਹਿਲਾਂ API key ਪਾਓ');busy('🔄 ਮਾਡਲਾਂ ਦੀ ਸੂਚੀ ਆ ਰਹੀ ਹੈ…');
- try{const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key='+encodeURIComponent(key));if(!r.ok)throw new Error('API '+r.status);
-  const j=await r.json();const ms=(j.models||[]).filter(m=>/gemini/i.test(m.name)&&(m.supportedGenerationMethods||[]).includes('generateContent')&&!/(tts|image|live|embedding|audio|robotics|computer|aqa)/i.test(m.name)).map(m=>m.name.replace('models/',''));
-  if(!ms.length)throw new Error('ਕੋਈ ਮਾਡਲ ਨਹੀਂ ਮਿਲਿਆ');
-  ms.sort((a,b)=>(/flash/.test(b)-/flash/.test(a))||b.localeCompare(a,undefined,{numeric:true}));
-  const s=$('sModel');const cur=s.value;s.innerHTML=ms.map(m=>'<option value="'+m+'">'+m+'</option>').join('');
-  const pick=ms.find(m=>m===cur)||ms.find(m=>/^gemini-[\d.]+-flash$/.test(m))||ms[0];s.value=pick;toast('✅ '+ms.length+' ਮਾਡਲ ਮਿਲੇ। ਚੁਣ ਕੇ 💾 ਦਬਾਓ।',4000)}
- catch(e){toast('❌ '+e.message,4000)}busy('')};
-function openSettings(){$('sKey').value=ls.get('ptr_key','');ensureOpt(S.model);$('sModel').value=S.model;$('sGoal').value=S.goal;$('sTheme').value=S.theme;$('sSerif').checked=S.serif;$('sAuto').checked=S.auto;$('sVol').checked=S.vol;$('sWake').checked=S.wake;$('sImm').checked=S.imm;openSheet('shSet')}
+function openSettings(){$('sKey').value=ls.get('ptr_key','');$('sModel').value=S.model;$('sGoal').value=S.goal;$('sTheme').value=S.theme;$('sSerif').checked=S.serif;$('sAuto').checked=S.auto;$('sVol').checked=S.vol;$('sWake').checked=S.wake;$('sImm').checked=S.imm;openSheet('shSet')}
 $('bSet').onclick=$('bSet2').onclick=openSettings;
 $('sSave').onclick=()=>{ls.set('ptr_key',$('sKey').value.trim());S.model=$('sModel').value;S.goal=+$('sGoal').value;S.theme=$('sTheme').value;S.serif=$('sSerif').checked;S.auto=$('sAuto').checked;S.vol=$('sVol').checked;S.wake=$('sWake').checked;S.imm=$('sImm').checked;saveS();applyTheme();renderHeader();closeSheet('shSet');toast('✅ ਸੰਭਾਲਿਆ')};
 $('sReset').onclick=()=>{if(confirm('ਸਾਰੇ ਅੰਕੜੇ ਅਤੇ ਇਨਾਮ ਮਿਟਾਉਣੇ ਹਨ?')){Object.assign(ST,{days:{},seen:{},translated:0,total:0,best:0,ach:{},finished:{},quizPerfect:false,night:false});saveST();renderHeader();toast('ਰੀਸੈੱਟ ਹੋ ਗਿਆ')}};
