@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pa" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2c5f2d" id="themeMeta">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>ਪੰਜਾਬੀ ਕਿਤਾਬ ਰੀਡਰ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;600;700&family=Noto+Serif+Gurmukhi:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+/* ========== THEMES ========== */
+:root{--green:#2c5f2d;--green2:#3e7d40;--gold:#e6a817;--r:14px;--sans:'Noto Sans Gurmukhi',system-ui,sans-serif;--serif:'Noto Serif Gurmukhi','Noto Sans Gurmukhi',serif}
+[data-theme=light]{--bg:#f5f1e8;--card:#fff;--ink:#1d1d1b;--mute:#6d6a60;--line:#e2dccb;--hl:#fff3cd}
+[data-theme=sepia]{--bg:#efe2c3;--card:#f7edd3;--ink:#3b2f1e;--mute:#7a6a4f;--line:#d9c79c;--hl:#ffe9a8}
+[data-theme=dark]{--bg:#141414;--card:#202020;--ink:#e8e6e1;--mute:#9a978f;--line:#333;--hl:#3a3418}
+[data-theme=black]{--bg:#000;--card:#111;--ink:#ddd;--mute:#888;--line:#2a2a2a;--hl:#2d2a12}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);overscroll-behavior:none}
+button{font:inherit;color:inherit;cursor:pointer}
+.hidden{display:none!important}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg)}
+/* ========== LIBRARY ========== */
+.hero{background:linear-gradient(135deg,var(--green),#1f4a21);color:#fff;padding:calc(env(safe-area-inset-top) + 16px) 16px 18px;border-radius:0 0 24px 24px}
+.hero h1{margin:0;font-size:20px}.hero p{margin:4px 0 0;font-size:12px;opacity:.85}
+.hrow{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.ic{background:rgba(255,255,255,.18);border:0;border-radius:12px;width:40px;height:40px;font-size:18px;color:#fff}
+.stats-strip{display:flex;gap:10px;margin-top:14px;align-items:center}
+.chip{background:rgba(255,255,255,.16);border-radius:20px;padding:8px 12px;font-size:13px;font-weight:600}
+.ring{position:relative;width:46px;height:46px}.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px}
+.libbody{flex:1;overflow-y:auto;padding:14px 14px 90px}
+.cont{background:linear-gradient(135deg,var(--gold),#c98a00);color:#2b1d00;border-radius:var(--r);padding:14px;margin-bottom:14px;display:flex;gap:12px;align-items:center}
+.cont .t{font-weight:700}.cont small{opacity:.85}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.btn{background:var(--green);color:#fff;border:0;border-radius:12px;padding:12px 14px;font-weight:600;text-align:center;display:block}
+.btn.alt{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.btn.gold{background:var(--gold);color:#2b1d00}.btn.sm{padding:8px 10px;font-size:13px}
+.book{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px;margin-bottom:10px;display:flex;gap:12px}
+.cover{width:62px;height:88px;border-radius:8px;flex:none;background:linear-gradient(160deg,var(--green2),#1f4a21);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;overflow:hidden}
+.cover img{width:100%;height:100%;object-fit:cover}
+.book .info{flex:1;min-width:0}.book .nm{font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.book small{color:var(--mute);display:block;margin-top:2px}
+.pbar{height:6px;background:var(--line);border-radius:4px;margin:8px 0;overflow:hidden}.pbar i{display:block;height:100%;background:var(--green2)}
+.brow{display:flex;gap:8px}
+.empty{text-align:center;color:var(--mute);padding:30px 10px;line-height:1.8}
+/* ========== READER ========== */
+.bar{display:flex;align-items:center;gap:6px;padding:calc(env(safe-area-inset-top) + 6px) 8px 6px;background:var(--green);color:#fff}
+.bar button{background:rgba(255,255,255,.16);border:0;border-radius:10px;min-width:38px;height:38px;color:#fff;font-size:16px}
+.bar .pg{flex:1;text-align:center;font-weight:700;background:transparent;font-size:15px}
+.bar2{display:flex;gap:6px;align-items:center;padding:6px 8px;background:var(--card);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+.bar2 button{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px 10px;font-size:13px;flex:none}
+.bar2 button.on{background:var(--green);color:#fff;border-color:var(--green)}
+.runbar{padding:8px 12px;background:var(--card);border-bottom:1px solid var(--line);font-size:13px;display:flex;align-items:center;gap:10px}
+.runbar .pbar{flex:1;margin:0}
+#stage{flex:1;overflow-y:auto;padding:10px;-webkit-overflow-scrolling:touch}
+#pgwrap{background:var(--card);border-radius:10px;border:1px solid var(--line);padding:6px;overflow-x:auto;text-align:center}
+#cv{max-width:none;display:inline-block;background:#fff}
+.otext{text-align:left;padding:14px;line-height:1.9;white-space:pre-wrap;font-size:16px}
+#trpanel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-top:12px;padding:14px 14px 18px}
+#trpanel h3{margin:0 0 10px;font-size:14px;color:var(--green2)}
+#trbody{font-size:var(--fs,20px);line-height:2.1}
+#trbody.serif{font-family:var(--serif)}
+#trbody p{margin:0 0 .8em}#trbody h4{margin:.6em 0;font-size:1.1em}
+.w{border-bottom:1px dashed var(--mute);cursor:pointer}.w.sel{background:var(--hl)}
+[data-view=orig] #trpanel{display:none}[data-view=pa] #pgwrap{display:none}
+[data-view=pa] #trpanel{margin-top:0}
+@media (orientation:landscape) and (min-width:700px){#stage[data-view=both]{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}#stage[data-view=both] #trpanel{margin-top:0}}
+.imm #topbar,.imm #bar2,.imm #bottom{display:none}
+.imm #stage{padding-top:calc(env(safe-area-inset-top) + 10px)}
+#bottom{background:var(--card);border-top:1px solid var(--line);padding:6px 8px calc(env(safe-area-inset-bottom) + 6px)}
+#slider{width:100%;accent-color:var(--green2)}
+.brow2{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.brow2 button{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 2px;font-size:12px}
+.brow2 button.on{background:var(--green);color:#fff}
+#listenbar{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 108px);background:var(--ink);color:var(--bg);border-radius:14px;padding:8px 12px;display:flex;gap:10px;align-items:center;font-size:12px;z-index:30}
+#listenbar input{flex:1}#listenbar select,#listenbar button{background:transparent;color:inherit;border:1px solid currentColor;border-radius:8px;padding:4px 6px}
+/* ========== SHEETS ========== */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:none;align-items:flex-end}
+.sheet.open{display:flex}
+.sin{background:var(--bg);width:100%;max-height:92%;border-radius:20px 20px 0 0;overflow-y:auto;padding:16px 16px calc(env(safe-area-inset-bottom) + 20px)}
+.sin.tall{height:92%;display:flex;flex-direction:column;overflow:hidden}
+.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.sh h2{margin:0;font-size:17px}
+.x{background:var(--card);border:1px solid var(--line);border-radius:10px;width:36px;height:36px}
+label.f{display:block;margin:12px 0 4px;font-size:13px;color:var(--mute);font-weight:600}
+input[type=text],input[type=password],select,textarea{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:15px}
+textarea{min-height:90px;resize:vertical}
+.sw{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid button{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 4px;font-size:12px;display:flex;flex-direction:column;gap:4px;align-items:center}
+.grid button span{font-size:22px}
+/* tutor */
+.tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button{flex:1;padding:8px 2px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:13px}
+.tabs button.on{background:var(--green);color:#fff;border-color:var(--green)}
+.pane{flex:1;overflow-y:auto;display:none;flex-direction:column}.pane.on{display:flex}
+#chat{flex:1;overflow-y:auto;padding-bottom:8px}
+.msg{max-width:88%;padding:10px 12px;border-radius:14px;margin:6px 0;line-height:1.7;font-size:14px;word-wrap:break-word}
+.msg.u{background:var(--green);color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+.msg.a{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px}
+.chips2{display:flex;gap:6px;overflow-x:auto;padding:6px 0}.chips2 button{flex:none;border:1px solid var(--line);background:var(--card);border-radius:18px;padding:7px 11px;font-size:12px}
+.sendrow{display:flex;gap:8px;margin-top:6px}.sendrow input{flex:1}
+.vw{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}
+.vw b{font-size:16px}.vw .n{display:none;font-size:13px;line-height:1.7;margin-top:6px;white-space:pre-wrap}.vw.open .n{display:block}
+.opt{display:block;width:100%;text-align:left;margin:6px 0;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.opt.ok{background:#2e7d32;color:#fff}.opt.bad{background:#c62828;color:#fff}
+#wordpop{position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom) + 10px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;z-index:45;box-shadow:0 10px 30px rgba(0,0,0,.35);max-height:55%;overflow-y:auto}
+#wordpop .wd{font-size:22px;font-weight:700}#wordpop .ex{font-size:14px;line-height:1.7;margin:8px 0;white-space:pre-wrap}
+/* stats */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cards div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}.cards b{display:block;font-size:22px;color:var(--green2)}.cards span{font-size:12px;color:var(--mute)}
+.week{display:flex;gap:6px;align-items:flex-end;height:110px;margin:14px 0 4px}.week div{flex:1;text-align:center;font-size:11px;color:var(--mute);display:flex;flex-direction:column;justify-content:flex-end;height:100%}.week i{display:block;background:var(--green2);border-radius:5px 5px 0 0;min-height:3px}
+.ach{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.ach div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 4px;text-align:center;font-size:11px;opacity:.35}.ach div.on{opacity:1;border-color:var(--gold)}.ach span{font-size:26px;display:block}
+/* misc */
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:22px;z-index:100;font-size:13px;max-width:90%;text-align:center;display:none}
+#status{position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom) + 70px);background:var(--gold);color:#2b1d00;border-radius:12px;padding:8px 12px;font-size:13px;z-index:90;display:none;text-align:center}
+.dots span{animation:bl 1.2s infinite;display:inline-block}.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}@keyframes bl{0%,80%,100%{opacity:.2}40%{opacity:1}}
+.cf{position:fixed;top:-12px;width:9px;height:14px;z-index:120;animation:fall linear forwards;pointer-events:none}@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.small{font-size:12px;color:var(--mute);line-height:1.7}
+</style>
+</head>
+<body>
+<div id="toast"></div><div id="status"></div>
+
+<!-- ================= LIBRARY ================= -->
+<main id="lib" class="screen">
+  <header class="hero">
+    <div class="hrow"><div><h1>📖 ਪੰਜਾਬੀ ਕਿਤਾਬ ਰੀਡਰ</h1><p>Any language → Punjabi · AI tutor ਗੁਰੂ ਜੀ</p></div><button class="ic" id="bSet">⚙️</button></div>
+    <div class="stats-strip">
+      <div class="chip" id="cStreak">🔥 0</div>
+      <div class="ring"><svg width="46" height="46"><circle cx="23" cy="23" r="18" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="5"/><circle id="ringc" cx="23" cy="23" r="18" fill="none" stroke="#e6a817" stroke-width="5" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="113.1"/></svg><b id="ringt">0</b></div>
+      <div class="chip" id="cGoal">🎯 0/10</div>
+      <button class="chip" id="bStats" style="border:0;color:#fff">📊 ਅੰਕੜੇ</button>
+    </div>
+  </header>
+  <div class="libbody">
+    <div id="cont"></div>
+    <div class="actions">
+      <label class="btn" for="file">📂 ਕਿਤਾਬ ਜੋੜੋ (PDF / TXT)</label>
+      <button class="btn alt" id="bGuru">🤖 ਗੁਰੂ ਜੀ ਨੂੰ ਪੁੱਛੋ</button>
+    </div>
+    <input type="file" id="file" accept=".pdf,.txt,.md,application/pdf,text/plain" class="hidden">
+    <div id="books"></div>
+    <p class="small" style="text-align:center;margin-top:20px">ਕਿਤਾਬ ਤੁਹਾਡੇ ਫ਼ੋਨ ਵਿੱਚ ਹੀ ਰਹਿੰਦੀ ਹੈ। ਸਿਰਫ਼ ਪੰਨੇ ਦਾ ਪਾਠ ਅਨੁਵਾਦ ਲਈ Gemini ਨੂੰ ਭੇਜਿਆ ਜਾਂਦਾ ਹੈ।</p>
+  </div>
+</main>
+
+<!-- ================= READER ================= -->
+<section id="reader" class="screen hidden">
+  <div class="bar" id="topbar">
+    <button id="bBack">←</button><button id="bPrev">◀</button>
+    <button class="pg" id="pgno">1 / 1</button>
+    <button id="bNext">▶</button><button id="bMark">🔖</button><button id="bSet2">⚙️</button>
+  </div>
+  <div class="bar2" id="bar2">
+    <button data-v="both" class="vt">ਦੋਵੇਂ</button><button data-v="orig" class="vt">ਮੂਲ</button><button data-v="pa" class="vt">ਪੰਜਾਬੀ</button>
+    <button id="zOut">🔍−</button><button id="zIn">🔍+</button><button id="fOut">A−</button><button id="fIn">A+</button>
+  </div>
+  <div class="runbar hidden" id="runbar"><span id="runtxt">0%</span><div class="pbar"><i id="runfill" style="width:0"></i></div><button class="btn sm" id="runstop">⏹</button></div>
+  <div id="stage" data-view="both">
+    <div id="pgwrap"><canvas id="cv"></canvas><div id="otext" class="otext hidden"></div></div>
+    <div id="trpanel"><h3>🟢 ਪੰਜਾਬੀ ਅਨੁਵਾਦ</h3><div id="trbody"></div></div>
+  </div>
+  <div id="listenbar" class="hidden">
+    <button id="lStop">⏹</button><span>🐢</span><input type="range" id="lRate" min="0.5" max="1.5" step="0.1"><span>🐇</span>
+    <select id="lTimer"><option value="0">⏱ ਬੰਦ</option><option value="15">15 ਮਿੰ</option><option value="30">30 ਮਿੰ</option><option value="45">45 ਮਿੰ</option></select>
+  </div>
+  <div id="bottom">
+    <input type="range" id="slider" min="1" max="1" value="1">
+    <div class="brow2">
+      <button id="bTr">🔄 ਅਨੁਵਾਦ</button><button id="bListen">🎧 ਸੁਣੋ</button><button id="bExplain">🤖 ਸਮਝਾਓ</button><button id="bMore">⋯ ਹੋਰ</button>
+    </div>
+  </div>
+</section>
+
+<!-- word popup -->
+<div id="wordpop" class="hidden"><div class="wd" id="wpw"></div><div class="ex" id="wpx"></div>
+  <div class="brow"><button class="btn sm" id="wpE">🤖 ਸਮਝਾਓ</button><button class="btn sm alt" id="wpS">💾 ਸੰਭਾਲੋ</button><button class="btn sm alt" id="wpC">✖</button></div></div>
+
+<!-- ================= SHEETS ================= -->
+<div class="sheet" id="shMore"><div class="sin"><div class="sh"><h2>⋯ ਹੋਰ ਸੰਦ</h2><button class="x" data-close>✖</button></div>
+  <div class="grid">
+    <button data-m="book"><span>📚</span>ਪੂਰੀ ਕਿਤਾਬ</button><button data-m="profile"><span>📑</span>ਕਿਤਾਬ ਪ੍ਰੋਫ਼ਾਈਲ</button><button data-m="retr"><span>♻️</span>ਇਹ ਪੰਨਾ ਮੁੜ</button>
+    <button data-m="search"><span>🔍</span>ਖੋਜ</button><button data-m="marks"><span>🔖</span>ਬੁੱਕਮਾਰਕ</button><button data-m="imm"><span>🖥</span>ਇਮਰਸਿਵ</button>
+    <button data-m="copy"><span>📋</span>ਕਾਪੀ</button><button data-m="share"><span>📤</span>ਸਾਂਝਾ ਕਰੋ</button><button data-m="speak"><span>🔊</span>ਪੰਨਾ ਬੋਲੋ</button>
+    <button data-m="txt"><span>⬇</span>.txt ਐਕਸਪੋਰਟ</button><button data-m="pdf"><span>🖨</span>ਦੋ-ਭਾਸ਼ੀ PDF</button><button data-m="theme"><span>🌙</span>ਥੀਮ ਬਦਲੋ</button>
+  </div></div></div>
+
+<div class="sheet" id="shSet"><div class="sin"><div class="sh"><h2>⚙️ ਸੈਟਿੰਗਜ਼</h2><button class="x" data-close>✖</button></div>
+  <label class="f">Gemini API key (<a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--green2)">ਇੱਥੋਂ ਮੁਫ਼ਤ ਲਓ</a>)</label><input type="password" id="sKey" autocomplete="off">
+  <label class="f">ਮਾਡਲ</label><select id="sModel"><option value="gemini-2.5-flash">2.5 Flash (ਸਭ ਤੋਂ ਵਧੀਆ)</option><option value="gemini-2.5-flash-lite">2.5 Flash-Lite (ਵੱਧ ਮੁਫ਼ਤ ਕੋਟਾ)</option><option value="gemini-2.0-flash">2.0 Flash</option></select>
+  <label class="f">ਰੋਜ਼ਾਨਾ ਟੀਚਾ (ਪੰਨੇ)</label><select id="sGoal"><option>5</option><option>10</option><option>20</option></select>
+  <label class="f">ਥੀਮ</label><select id="sTheme"><option value="light">ਹਲਕਾ (ਕਰੀਮ)</option><option value="sepia">ਸੇਪੀਆ</option><option value="dark">ਗੂੜ੍ਹਾ</option><option value="black">ਕਾਲਾ (AMOLED)</option></select>
+  <div class="sw"><span>ਪੰਜਾਬੀ ਲਈ ਸੈਰਿਫ਼ ਫ਼ੌਂਟ</span><input type="checkbox" id="sSerif"></div>
+  <div class="sw"><span>ਪੰਨਾ ਖੋਲ੍ਹਦਿਆਂ ਆਪਣੇ-ਆਪ ਅਨੁਵਾਦ</span><input type="checkbox" id="sAuto"></div>
+  <div class="sw"><span>ਵੌਲਿਊਮ ਕੀਆਂ ਨਾਲ ਪੰਨਾ ਪਲਟੋ</span><input type="checkbox" id="sVol"></div>
+  <div class="sw"><span>ਪੜ੍ਹਦਿਆਂ ਸਕ੍ਰੀਨ ਚਾਲੂ ਰੱਖੋ</span><input type="checkbox" id="sWake"></div>
+  <div class="sw"><span>ਇਮਰਸਿਵ ਮੋਡ ਨਾਲ ਸ਼ੁਰੂ ਕਰੋ</span><input type="checkbox" id="sImm"></div>
+  <div class="brow" style="margin-top:14px"><button class="btn alt sm" id="sBack">💾 ਬੈਕਅੱਪ</button><button class="btn alt sm" id="sRest">📥 ਰੀਸਟੋਰ</button><button class="btn alt sm" id="sReset">♻️ ਅੰਕੜੇ ਰੀਸੈੱਟ</button></div>
+  <input type="file" id="restF" accept=".json" class="hidden">
+  <button class="btn" style="width:100%;margin-top:16px" id="sSave">💾 ਸੰਭਾਲੋ ਅਤੇ ਬੰਦ ਕਰੋ</button></div></div>
+
+<div class="sheet" id="shProf"><div class="sin"><div class="sh"><h2>📑 ਕਿਤਾਬ ਪ੍ਰੋਫ਼ਾਈਲ</h2><button class="x" data-close>✖</button></div>
+  <p class="small">ਇਹ ਪ੍ਰੋਫ਼ਾਈਲ ਹਰ ਪੰਨੇ ਦੇ ਅਨੁਵਾਦ ਨਾਲ ਜਾਂਦੀ ਹੈ, ਤਾਂ ਜੋ ਪੂਰੀ ਕਿਤਾਬ ਵਿੱਚ ਸ਼ਬਦ ਅਤੇ ਲਹਿਜ਼ਾ ਇੱਕੋ ਜਿਹਾ ਰਹੇ।</p>
+  <label class="f">ਭਾਸ਼ਾ ਦਾ ਲਹਿਜ਼ਾ (TONE)</label>
+  <select id="pTone"><option value="1">1 – ਸਾਫ਼-ਸਰਲ (ਸਵੈ-ਵਿਕਾਸ, ਆਮ ਵਿਗਿਆਨ, ਯਾਦਾਂ)</option><option value="2">2 – ਸਮਕਾਲੀ ਸਾਹਿਤਕ (ਮੂਲ)</option><option value="3">3 – ਉੱਚਾ (ਦਰਸ਼ਨ, ਅਧਿਆਤਮ)</option></select>
+  <label class="f">ਸ਼ਬਦ-ਕੋਸ਼ (ਹਰ ਲਾਈਨ: ਮੂਲ ਸ਼ਬਦ → ਪੰਜਾਬੀ)</label><textarea id="pGloss" placeholder="placebo → ਪਲੇਸਬੋ&#10;consciousness → ਚੇਤਨਾ"></textarea>
+  <button class="btn alt sm" id="pSuggest" style="margin-top:6px">✨ AI ਤੋਂ ਸ਼ਬਦ-ਕੋਸ਼ ਦੇ ਸੁਝਾਅ ਲਓ</button>
+  <label class="f">ਨਾਂ (ਮੂਲ → ਗੁਰਮੁਖੀ)</label><textarea id="pNames" placeholder="Joe Dispenza → ਜੋ ਡਿਸਪੈਂਜ਼ਾ"></textarea>
+  <label class="f">ਹੋਰ ਹਦਾਇਤਾਂ</label><textarea id="pNotes" placeholder="ਜਿਵੇਂ: 'you' ਲਈ ਹਮੇਸ਼ਾ ਤੁਸੀਂ; ਕੁਝ English ਸ਼ਬਦ ਜਿਉਂ ਦੇ ਤਿਉਂ ਰੱਖੋ"></textarea>
+  <button class="btn" style="width:100%;margin-top:14px" id="pSave">💾 ਸੰਭਾਲੋ</button></div></div>
+
+<div class="sheet" id="shStats"><div class="sin"><div class="sh"><h2>📊 ਅੰਕੜੇ</h2><button class="x" data-close>✖</button></div><div id="statsBody"></div></div></div>
+<div class="sheet" id="shMarks"><div class="sin"><div class="sh"><h2>🔖 ਬੁੱਕਮਾਰਕ</h2><button class="x" data-close>✖</button></div><div id="marksBody"></div></div></div>
+
+<div class="sheet" id="shSearch"><div class="sin"><div class="sh"><h2>🔍 ਕਿਤਾਬ ਵਿੱਚ ਖੋਜ</h2><button class="x" data-close>✖</button></div>
+  <div class="sendrow"><input type="text" id="qIn" placeholder="ਪੰਜਾਬੀ ਜਾਂ ਮੂਲ ਭਾਸ਼ਾ ਦਾ ਸ਼ਬਦ"><button class="btn sm" id="qGo">ਖੋਜੋ</button></div>
+  <p class="small" id="qInfo"></p><div id="qRes"></div></div></div>
+
+<!-- tutor -->
+<div class="sheet" id="shTutor"><div class="sin tall"><div class="sh"><h2>🤖 ਗੁਰੂ ਜੀ</h2><button class="x" data-close>✖</button></div>
+  <div class="tabs"><button data-t="chat" class="on">💬 ਗੱਲਬਾਤ</button><button data-t="words">📓 ਸ਼ਬਦ</button><button data-t="quiz">🃏 ਕੁਇਜ਼</button><button data-t="lesson">🎓 ਪਾਠ</button></div>
+  <div class="pane on" id="p-chat"><div id="chat"></div>
+    <div class="chips2"><button data-q="explain">🎓 ਪੰਨਾ ਸਮਝਾਓ</button><button data-q="words">🔤 ਸ਼ਬਦ ਸਿੱਖੋ</button><button data-q="grammar">📝 ਵਿਆਕਰਨ</button><button data-q="fix">✨ ਅਨੁਵਾਦ ਸੁਧਾਰੋ</button><button data-q="quiz">🧠 ਮੈਨੂੰ ਪੁੱਛੋ</button></div>
+    <div class="sendrow"><input type="text" id="tIn" placeholder="ਗੁਰੂ ਜੀ ਨੂੰ ਪੁੱਛੋ…"><button class="btn sm" id="tSend">➤</button></div></div>
+  <div class="pane" id="p-words"></div><div class="pane" id="p-quiz"></div><div class="pane" id="p-lesson"></div>
+</div></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   HELPERS
+===================================================================== */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const dkey=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+let toastT;function toast(m,ms=2600){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',ms)}
+function busy(m){const s=$('status');if(m){s.textContent=m;s.style.display='block'}else s.style.display='none'}
+function md(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/^\s*[\*\-]\s+/gm,'• ').replace(/\n/g,'<br>')}
+const cleanWord=w=>w.replace(/^[\s"'“”‘’.,;:!?()\[\]।—\-]+|[\s"'“”‘’.,;:!?()\[\]।—\-]+$/g,'');
+
+/* =====================================================================
+   SETTINGS + STATS
+===================================================================== */
+const DEF={model:'gemini-2.5-flash',theme:'light',auto:true,goal:10,vol:false,wake:true,imm:false,fs:20,serif:true,rate:1,zoom:1,view:'both'};
+const S=Object.assign({},DEF,ls.get('ptr_s',{}));
+const saveS=()=>ls.set('ptr_s',S);
+function applyTheme(){document.documentElement.dataset.theme=S.theme;$('themeMeta').content=S.theme==='light'||S.theme==='sepia'?'#2c5f2d':'#000';document.documentElement.style.setProperty('--fs',S.fs+'px');$('trbody').classList.toggle('serif',S.serif)}
+const ST=Object.assign({days:{},seenDay:'',seen:{},translated:0,total:0,best:0,ach:{},finished:{},words:0,quizPerfect:false,night:false},ls.get('ptr_stats',{}));
+const saveST=()=>ls.set('ptr_stats',ST);
+function streak(){let n=0;const d=new Date();if(!ST.days[dkey(d)])d.setDate(d.getDate()-1);while(ST.days[dkey(d)]>0){n++;d.setDate(d.getDate()-1)}return n}
+const ACH=[
+ {id:'first',ic:'📄',n:'ਪਹਿਲਾ ਪੰਨਾ',t:()=>ST.total>=1},{id:'book',ic:'📚',n:'ਪਹਿਲੀ ਕਿਤਾਬ ਪੂਰੀ',t:()=>Object.keys(ST.finished).length>=1},
+ {id:'p100',ic:'💯',n:'100 ਪੰਨੇ',t:()=>ST.total>=100},{id:'p500',ic:'🏅',n:'500 ਪੰਨੇ',t:()=>ST.total>=500},
+ {id:'s7',ic:'🔥',n:'7 ਦਿਨ ਲਗਾਤਾਰ',t:()=>ST.best>=7},{id:'s30',ic:'🌋',n:'30 ਦਿਨ ਲਗਾਤਾਰ',t:()=>ST.best>=30},
+ {id:'owl',ic:'🦉',n:'ਰਾਤ ਦਾ ਪਾਠਕ',t:()=>ST.night},{id:'w50',ic:'🔤',n:'50 ਸ਼ਬਦ ਸੰਭਾਲੇ',t:()=>ST.words>=50},{id:'quiz',ic:'🏆',n:'ਕੁਇਜ਼ ਪੂਰਾ',t:()=>ST.quizPerfect}];
+function checkAch(){ACH.forEach(a=>{if(!ST.ach[a.id]&&a.t()){ST.ach[a.id]=dkey();toast('🏆 '+a.ic+' '+a.n,3800)}});saveST()}
+function renderHeader(){const t=ST.days[dkey()]||0,g=+S.goal,s=streak();
+ $('cStreak').textContent='🔥 '+s+' ਦਿਨ';$('cGoal').textContent='🎯 '+t+'/'+g+(t>=g?' ✅':'');
+ $('ringc').style.strokeDashoffset=113.1*(1-Math.min(1,t/g));$('ringt').textContent=Math.min(t,g)}
+function confetti(){const c=['#e6a817','#2c5f2d','#c62828','#1565c0','#6a1b9a'];for(let i=0;i<70;i++){const d=document.createElement('div');d.className='cf';d.style.left=Math.random()*100+'vw';d.style.background=c[i%5];d.style.animationDuration=(2+Math.random()*2.5)+'s';d.style.animationDelay=Math.random()*.8+'s';document.body.appendChild(d);setTimeout(()=>d.remove(),5500)}}
+
+/* =====================================================================
+   INDEXEDDB
+===================================================================== */
+const DB={db:null,
+ open(){return new Promise((res,rej)=>{const r=indexedDB.open('ptr_db',2);r.onupgradeneeded=()=>{const d=r.result;['books','trans','ptext','blobs'].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n,{keyPath:'key'})});if(!d.objectStoreNames.contains('vocab'))d.createObjectStore('vocab',{keyPath:'id',autoIncrement:true})};r.onsuccess=()=>{this.db=r.result;res()};r.onerror=()=>rej(r.error)})},
+ tx(s,m='readonly'){return this.db.transaction(s,m).objectStore(s)},
+ req(r){return new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})},
+ get(s,k){return this.req(this.tx(s).get(k))},put(s,v){return this.req(this.tx(s,'readwrite').put(v))},
+ del(s,k){return this.req(this.tx(s,'readwrite').delete(k))},all(s){return this.req(this.tx(s).getAll())},
+ range(p){return IDBKeyRange.bound(p,p+'\uffff')},
+ count(s,p){return this.req(this.tx(s).count(this.range(p)))},
+ getRange(s,p){return this.req(this.tx(s).getAll(this.range(p)))},
+ delPrefix(s,p){return new Promise((res,rej)=>{const r=this.tx(s,'readwrite').openCursor(this.range(p));r.onsuccess=()=>{const c=r.result;if(c){c.delete();c.continue()}else res()};r.onerror=()=>rej(r.error)})}
+};
+
+/* =====================================================================
+   GEMINI
+===================================================================== */
+async function gem(contents,{system,json,temp=0.3,tries=3}={}){
+ const key=ls.get('ptr_key','');if(!key)throw new Error('NOKEY');
+ const body={contents,generationConfig:{temperature:temp}};
+ if(system)body.systemInstruction={parts:[{text:system}]};
+ if(json)body.generationConfig.responseMimeType='application/json';
+ const url='https://generativelanguage.googleapis.com/v1beta/models/'+S.model+':generateContent?key='+encodeURIComponent(key);
+ for(let a=0;a<=tries;a++){
+  let r;try{r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
+  catch(e){if(a===tries)throw new Error('ਨੈੱਟਵਰਕ ਸਮੱਸਿਆ — ਇੰਟਰਨੈੱਟ ਜਾਂਚੋ');busy('⏳ ਨੈੱਟਵਰਕ ਮੁੜ ਕੋਸ਼ਿਸ਼…');await wait(3000*(a+1));busy('');continue}
+  if(r.ok){const j=await r.json();const t=((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(p=>p.text||'').join('');
+   if(!t.trim()){if(a===tries)throw new Error('ਖਾਲੀ ਜਵਾਬ ਮਿਲਿਆ (ਸ਼ਾਇਦ ਸੁਰੱਖਿਆ ਫ਼ਿਲਟਰ)');continue}return t.trim()}
+  if((r.status===429||r.status>=500)&&a<tries){busy('⏳ ਸੀਮਾ ਪੁੱਜ ਗਈ, ਉਡੀਕ ਰਹੇ ਹਾਂ…');await wait(6000*(a+1));busy('');continue}
+  let m='';try{m=(await r.json()).error.message}catch(e){}
+  throw new Error('API '+r.status+(m?': '+m.slice(0,140):''))}
+}
+const U=t=>[{role:'user',parts:[{text:t}]}];
+function needKey(e){if(e&&e.message==='NOKEY'){toast('⚙️ ਪਹਿਲਾਂ Gemini API key ਪਾਓ',3500);openSettings();return true}return false}
+
+/* =====================================================================
+   TRANSLATION PROMPT (Master Prompt v5 condensed)
+===================================================================== */
+const TR_SYS=`You are a professional literary translator who translates book pages from any source language into Punjabi (Gurmukhi script), at the standard of a well-edited published Punjabi book. You are a translator, not a summarizer, explainer, editor or commentator.
+
+NON-NEGOTIABLE 1 - COMPLETE COVERAGE
+Translate every sentence, heading, subheading, list item, quotation, caption, footnote, date, number and name on the page. Never summarize, compress, skip repetitive-looking text, or merge sentences so that information is lost. Punjabi may split or reorder sentences for natural grammar, but every piece of information must survive. Add nothing: no explanations, opinions, background, corrections, examples or transitions of your own. If text is unreadable write [ਮੂਲ ਲਿਖਤ ਅਸਪਸ਼ਟ ਹੈ] and never guess.
+
+NON-NEGOTIABLE 2 - NATURAL CONTEMPORARY PUNJABI ("ਸਮਕਾਲੀ ਸਾਹਿਤਕ ਪੰਜਾਬੀ")
+Write the Punjabi an educated, well-read Punjabi reader finds dignified yet effortless, like a good Punjabi non-fiction book or serious magazine essay. It must sound written in Punjabi, not converted from another language: think in the meaning, then write it as a Punjabi author would.
+- NOT archaic, Sanskritized or scripture-like. Avoid stiff words such as ਉਪਰੰਤ, ਤਦ, ਯਥਾ, ਅਤਿ, ਕਿੰਤੂ unless the source itself is archaic.
+- NOT chatty or slangy (no ਯਾਰ, no filler words that are not in the source).
+- NOT simplified: if the idea is complex the Punjabi stays precise; never swap a concept for an easier one.
+- Prefer the common, well-understood word when it carries the same meaning: ਫਿਰ / ਇਸ ਤੋਂ ਬਾਅਦ, ਕਿਉਂਕਿ, ਜਿਵੇਂ, ਬਹੁਤ. Use Persian-origin (ਹਕੀਕਤ, ਅਸਰ, ਤਜਰਬਾ, ਕੋਸ਼ਿਸ਼) and Sanskrit-origin (ਚੇਤਨਾ, ਵਿਚਾਰ, ਭਾਵਨਾ) words freely when they are normal modern usage.
+- Vary sentence length like a good author. Split very long sentences into two when Punjabi needs it, keeping every clause. Use natural verb-final order and active constructions where the meaning allows. Avoid translationese (over-using ਦੁਆਰਾ, ਦੇ ਸੰਬੰਧ ਵਿੱਚ, "ਇਹ ਉਹ ਹੈ ਜੋ…", noun-heavy phrases where Punjabi would use a verb).
+- Self-test for each sentence: (1) would a Punjabi author write it this way? (2) is it heavier than the source? lighten it. (3) is it lighter or shorter than the source? content was lost; restore it.
+Calibration:
+ "He had finally learned to control his fear." -> too archaic: ਉਸ ਨੇ ਅੰਤ ਉਪਰੰਤ ਆਪਣੇ ਭੈ ਉੱਪਰ ਨਿਯੰਤਰਣ ਪ੍ਰਾਪਤ ਕਰਨਾ ਸਿੱਖ ਲਿਆ ਸੀ। / too casual: ਆਖ਼ਰ ਉਹ ਡਰ ਨੂੰ ਸਾਂਭਣਾ ਸਿੱਖ ਹੀ ਗਿਆ। / target: ਆਖ਼ਰਕਾਰ ਉਸ ਨੇ ਆਪਣੇ ਡਰ ਉੱਤੇ ਕਾਬੂ ਪਾਉਣਾ ਸਿੱਖ ਲਿਆ ਸੀ।
+ "Your thoughts shape the reality you experience." -> target: ਤੁਹਾਡੇ ਵਿਚਾਰ ਉਸ ਹਕੀਕਤ ਨੂੰ ਘੜਦੇ ਹਨ ਜੋ ਤੁਸੀਂ ਆਪਣੇ ਤਜਰਬੇ ਵਿੱਚ ਜਿਉਂਦੇ ਹੋ।
+
+DETAILS
+- Address the reader with ਤੁਸੀਂ unless the profile says otherwise; keep the same choice throughout the book.
+- Punjabi first. Keep an English word (written in Gurmukhi script) only when it is a settled term in modern Punjabi or a Punjabi equivalent would be unnatural or less precise.
+- Use the GLOSSARY and NAMES from the book profile exactly and consistently. Transliterate other names into Gurmukhi consistently.
+- Keep a metaphor if it works in Punjabi; otherwise give the same meaning with the nearest image. Never replace a figure of speech with a plain explanation.
+- Quotations: translate and keep quotation marks. Lists: keep structure and order. Numbers, dates and units: keep exactly, with Western digits. Foreign-language fragments inside the source: keep them as they are.
+- If the page begins or ends mid-sentence, translate the fragment faithfully as it stands and do not invent the missing part.
+
+OUTPUT: only the Punjabi translation as plain text. Keep paragraph breaks (one paragraph per line). Put a heading on its own line. No markdown symbols, no notes, no commentary, no source text.`;
+const TONES={1:'plain-clear: everyday educated vocabulary, shorter sentences; still complete and dignified',2:'literary-contemporary (default register described above)',3:'elevated: richer vocabulary and longer rhythm for philosophical/spiritual text; still readable, never archaic for its own sake'};
+function profileText(b){const p=b.profile||{};let s='BOOK PROFILE\nBook: '+b.name+'\nTONE: '+(p.tone||2)+' - '+TONES[p.tone||2]+'\n';
+ if(p.glossary&&p.glossary.trim())s+='GLOSSARY (use exactly):\n'+p.glossary.trim()+'\n';
+ if(p.names&&p.names.trim())s+='NAMES (use exactly):\n'+p.names.trim()+'\n';
+ if(p.notes&&p.notes.trim())s+='EXTRA INSTRUCTIONS:\n'+p.notes.trim()+'\n';return s+'\n'}
+const clean=t=>t.replace(/^```[a-z]*\n?/gm,'').replace(/```$/gm,'').replace(/\*\*/g,'').trim();
+
+/* =====================================================================
+   READER STATE
+===================================================================== */
+const R={book:null,pdf:null,texts:null,n:1,tok:0,cur:'',rtask:null};
+const INF={};
+const ckey=(b,n)=>b.key+':'+n;
+
+async function pageText(n){
+ const k=ckey(R.book,n);const c=await DB.get('ptext',k);if(c)return c.text;
+ if(R.book.type==='txt')return R.texts[n-1]||'';
+ if(!R.pdf)return '';
+ const pg=await R.pdf.getPage(n);const tc=await pg.getTextContent();let out='',lastY=null;
+ for(const it of tc.items){if(!('str' in it))continue;const y=it.transform[5],h=it.height||10;
+  if(lastY!==null&&Math.abs(y-lastY)>h*1.9&&!out.endsWith('\n\n'))out=out.replace(/[ \t]+$/,'')+'\n\n';
+  else if(lastY!==null&&Math.abs(y-lastY)>2&&!/\s$/.test(out))out+=' ';
+  out+=it.str;if(it.hasEOL&&!/\s$/.test(out))out+=' ';lastY=y}
+ out=out.replace(/[ \t]+/g,' ').replace(/ ?\n ?/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+ DB.put('ptext',{key:k,text:out});return out}
+async function pageImage(n,scale=1.5,q=.85){const pg=await R.pdf.getPage(n);const vp=pg.getViewport({scale});const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;return c.toDataURL('image/jpeg',q).split(',')[1]}
+
+/* =====================================================================
+   TRANSLATION ENGINE
+===================================================================== */
+function translatePage(b,n,force){
+ const k=ckey(b,n);
+ const p=(async()=>{
+  if(!force){const c=await DB.get('trans',k);if(c)return c.text}
+  if(INF[k])return INF[k];
+  if(!R.book||R.book.key!==b.key)throw new Error('ਕਿਤਾਬ ਬੰਦ ਹੋ ਗਈ');
+  throw new Error('__RUN__')})();
+ return p.catch(async e=>{
+  if(e.message!=='__RUN__')throw e;
+  const job=(async()=>{
+   const pt=n>1?await DB.get('trans',ckey(b,n-1)):null;
+   const head=pt?'[The Punjabi translation of the previous page ended with: "'+pt.text.slice(-300).replace(/\n/g,' ')+'" - keep names and terms consistent]\n':'';
+   const text=await pageText(n);let parts,out;
+   if(b.type==='pdf'&&text.length<40){const img=await pageImage(n);
+    parts=[{text:profileText(b)+head+'This page is given as an image. Read all the text on it and translate it into Punjabi following every rule. If it has no readable text at all, output exactly: [ਖਾਲੀ ਪੰਨਾ]'},{inline_data:{mime_type:'image/jpeg',data:img}}]}
+   else if(!text.trim())out='[ਖਾਲੀ ਪੰਨਾ]';
+   else parts=[{text:profileText(b)+head+'PAGE TEXT:\n'+text}];
+   if(!out)out=clean(await gem([{role:'user',parts}],{system:TR_SYS}));
+   await DB.put('trans',{key:k,text:out,t:Date.now()});
+   if(!force){ST.translated++;saveST()}
+   checkDone(b);return out})();
+  INF[k]=job;job.catch(()=>{}).then(()=>{delete INF[k]});return job});
+}
+async function checkDone(b){const c=await DB.count('trans',b.key+':');if(c>=b.pages&&!ST.finished[b.key]){ST.finished[b.key]=1;checkAch();confetti();toast('🎉 ਪੂਰੀ ਕਿਤਾਬ ਦਾ ਅਨੁਵਾਦ ਹੋ ਗਿਆ!',4000)}}
+async function doTranslate(n,force){
+ const b=R.book,tok=R.tok;setTr('loading');
+ try{const t=await translatePage(b,n,force);if(R.book===b&&R.n===n)renderTr(t);prefetch(n);return t}
+ catch(e){if(needKey(e)){if(R.n===n)setTr('empty');return ''}
+  if(R.book===b&&R.n===n)setTr('err',e.message);throw e}
+}
+let pfBusy=false;
+async function prefetch(n){if(!S.auto||pfBusy||RUN.on)return;pfBusy=true;const b=R.book;
+ try{for(const i of [1,2]){if(R.book!==b||n+i>b.pages)break;if(await DB.get('trans',ckey(b,n+i)))continue;await translatePage(b,n+i);await wait(1500)}}catch(e){}pfBusy=false}
+function setTr(state,msg){const el=$('trbody');
+ if(state==='loading')el.innerHTML='<p class="small dots">ਅਨੁਵਾਦ ਹੋ ਰਿਹਾ ਹੈ <span>●</span><span>●</span><span>●</span></p>';
+ else if(state==='err')el.innerHTML='<p>❌ '+esc(msg||'ਗਲਤੀ')+'</p><button class="btn sm" onclick="doTranslate(R.n,true).catch(()=>{})">🔄 ਮੁੜ ਕੋਸ਼ਿਸ਼</button>';
+ else if(state==='empty')el.innerHTML='<p class="small">ਇਸ ਪੰਨੇ ਦਾ ਅਨੁਵਾਦ ਅਜੇ ਨਹੀਂ ਹੋਇਆ।</p><button class="btn sm" onclick="doTranslate(R.n).catch(()=>{})">🔄 ਅਨੁਵਾਦ ਕਰੋ</button>'}
+function renderTr(t){R.cur=t;
+ $('trbody').innerHTML=t.split(/\n+/).filter(x=>x.trim()).map(p=>{const h=p.match(/^#+\s*(.*)/);
+  const body=(h?h[1]:p).split(/(\s+)/).map(w=>!w||/^\s+$/.test(w)?w:'<span class="w">'+esc(w)+'</span>').join('');
+  return h?'<h4>'+body+'</h4>':'<p>'+body+'</p>'}).join('')}
+
+/* whole book */
+const RUN={on:false,stop:false};
+async function runBook(){
+ if(RUN.on){RUN.stop=true;return}
+ const b=R.book;RUN.on=true;RUN.stop=false;
+ const have=new Set((await DB.getRange('trans',b.key+':')).map(x=>+x.key.split(':')[1]));
+ let queue=[];for(let i=1;i<=b.pages;i++)if(!have.has(i))queue.push(i);
+ if(!queue.length){RUN.on=false;toast('✅ ਸਾਰੇ ਪੰਨੇ ਪਹਿਲਾਂ ਹੀ ਅਨੁਵਾਦ ਹੋ ਚੁੱਕੇ ਹਨ');return}
+ const total=queue.length;let done=0,failed=[];const t0=Date.now();
+ $('runbar').classList.remove('hidden');
+ const upd=()=>{const pct=Math.round(done/total*100);const el=(Date.now()-t0)/1000;const eta=done?Math.round(el/done*(total-done)/60):'…';
+  $('runfill').style.width=pct+'%';$('runtxt').textContent='📚 '+pct+'% · '+done+'/'+total+' · ~'+eta+' ਮਿੰ'};upd();
+ async function worker(list){while(!RUN.stop&&R.book===b){const n=list.shift();if(!n)break;
+  try{const t=await translatePage(b,n);if(R.n===n)renderTr(t)}catch(e){if(e.message==='NOKEY'){RUN.stop=true;needKey(e);list.unshift(n);break}failed.push(n)}
+  done++;upd();await wait(3500)}}
+ await Promise.all([0,1,2,3].map(()=>worker(queue)));
+ if(failed.length&&!RUN.stop){const again=failed.slice();failed=[];await worker(again)}
+ RUN.on=false;$('runbar').classList.add('hidden');
+ if(RUN.stop)toast('⏹ ਰੋਕ ਦਿੱਤਾ। ਦੁਬਾਰਾ ਦਬਾਓ ਤਾਂ ਬਾਕੀ ਪੰਨੇ ਹੋਣਗੇ।');
+ else if(failed.length)toast('⚠️ '+failed.length+' ਪੰਨੇ ਅਸਫਲ ਰਹੇ, 📚 ਦਬਾ ਕੇ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ',4500);
+ else toast('🎉 ਪੂਰੀ ਕਿਤਾਬ ਦਾ ਅਨੁਵਾਦ ਹੋ ਗਿਆ!',4000);
+ RUN.stop=false}
+
+/* =====================================================================
+   LIBRARY
+===================================================================== */
+function show(id){['lib','reader'].forEach(s=>$(s).classList.toggle('hidden',s!==id))}
+async function renderLib(){
+ renderHeader();
+ const books=(await DB.all('books')).sort((a,b)=>(b.opened||0)-(a.opened||0));
+ const el=$('books');
+ if(!books.length){$('cont').innerHTML='';el.innerHTML='<div class="empty">📚<br>ਅਜੇ ਕੋਈ ਕਿਤਾਬ ਨਹੀਂ।<br>ਉੱਪਰ “ਕਿਤਾਬ ਜੋੜੋ” ਦਬਾ ਕੇ PDF ਜਾਂ TXT ਚੁਣੋ।</div>';return}
+ const counts=await Promise.all(books.map(b=>DB.count('trans',b.key+':')));
+ const card=(b,i)=>{const pct=Math.round(counts[i]/b.pages*100);
+  return '<div class="book"><div class="cover">'+(b.cover?'<img src="'+b.cover+'">':esc((b.name||'?').trim().charAt(0).toUpperCase()))+'</div><div class="info"><div class="nm">'+esc(b.name)+'</div><small>'+counts[i]+' / '+b.pages+' ਪੰਨੇ ਅਨੁਵਾਦ ('+pct+'%)</small><small>ਆਖ਼ਰੀ ਵਾਰ ਪੰਨਾ '+(b.lastPage||1)+' ਉੱਤੇ ਸੀ</small><div class="pbar"><i style="width:'+pct+'%"></i></div><div class="brow"><button class="btn sm" data-a="read" data-k="'+b.key+'">📖 ਪੜ੍ਹੋ</button><button class="btn sm alt" data-a="del" data-k="'+b.key+'">🗑</button></div></div></div>'};
+ const b0=books[0];
+ $('cont').innerHTML='<div class="cont"><div style="font-size:30px">▶</div><div style="flex:1;min-width:0"><div class="t">ਪੜ੍ਹਨਾ ਜਾਰੀ ਰੱਖੋ</div><small>'+esc(b0.name)+' · ਪੰਨਾ '+(b0.lastPage||1)+'</small></div><button class="btn sm" data-a="read" data-k="'+b0.key+'">ਖੋਲ੍ਹੋ</button></div>';
+ el.innerHTML=books.map(card).join('')}
+$('lib').addEventListener('click',async e=>{const t=e.target.closest('[data-a]');if(!t)return;const k=t.dataset.k;
+ if(t.dataset.a==='read')openBook(k);
+ if(t.dataset.a==='del'&&confirm('ਇਹ ਕਿਤਾਬ ਅਤੇ ਇਸ ਦੇ ਸਾਰੇ ਅਨੁਵਾਦ ਮਿਟਾਉਣੇ ਹਨ?')){await DB.del('books',k);await DB.del('blobs',k);await DB.delPrefix('trans',k+':');await DB.delPrefix('ptext',k+':');renderLib()}});
+
+function paginate(txt){
+ const paras=txt.replace(/\r/g,'').split(/\n{2,}/).map(p=>p.trim()).filter(Boolean);const pages=[];let cur='';
+ const push=()=>{if(cur.trim())pages.push(cur.trim());cur=''};
+ for(const p of paras){
+  if(p.length>2400){const sents=p.match(/[^.!?।]+[.!?।]*\s*/g)||[p];let buf='';
+   for(const s of sents){if(cur.length+buf.length+s.length>1700){if(buf){cur+=(cur?'\n\n':'')+buf.trim();buf=''}push()}buf+=s}
+   if(buf)cur+=(cur?'\n\n':'')+buf.trim();continue}
+  if(cur&&cur.length+p.length>1700)push();cur+=(cur?'\n\n':'')+p}
+ push();return pages.length?pages:['']}
+$('file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;busy('ਕਿਤਾਬ ਜੋੜ ਰਹੇ ਹਾਂ…');
+ try{const key='b'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  const rec={key,name:f.name.replace(/\.(pdf|txt|md)$/i,''),size:f.size,lastPage:1,added:Date.now(),opened:Date.now(),profile:{tone:2,glossary:'',names:'',notes:''},marks:[]};
+  if(/\.pdf$/i.test(f.name)||f.type==='application/pdf'){
+   if(typeof pdfjsLib==='undefined')throw new Error('PDF.js ਲੋਡ ਨਹੀਂ ਹੋਇਆ — ਇੰਟਰਨੈੱਟ ਜਾਂਚੋ');
+   const buf=await f.arrayBuffer();const doc=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;
+   rec.type='pdf';rec.pages=doc.numPages;
+   try{const pg=await doc.getPage(1);const v0=pg.getViewport({scale:1});const vp=pg.getViewport({scale:200/v0.width});const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;rec.cover=c.toDataURL('image/jpeg',.7)}catch(x){}
+   await DB.put('blobs',{key,data:new Blob([buf],{type:'application/pdf'})});
+  }else{const texts=paginate(await f.text());rec.type='txt';rec.pages=texts.length;await DB.put('blobs',{key,texts})}
+  await DB.put('books',rec);toast('✅ ਕਿਤਾਬ ਜੁੜ ਗਈ');await renderLib()}
+ catch(err){toast('❌ '+err.message,4000)}busy('')};
+
+/* =====================================================================
+   OPEN BOOK + RENDER
+===================================================================== */
+async function openBook(key,page){
+ const b=await DB.get('books',key);if(!b)return;busy('ਕਿਤਾਬ ਖੋਲ੍ਹ ਰਹੇ ਹਾਂ…');
+ try{R.book=b;R.pdf=null;R.texts=null;const bl=await DB.get('blobs',key);
+  if(b.type==='pdf'){if(typeof pdfjsLib==='undefined')throw new Error('PDF.js ਲੋਡ ਨਹੀਂ ਹੋਇਆ');R.pdf=await pdfjsLib.getDocument({data:await bl.data.arrayBuffer()}).promise}
+  else R.texts=bl.texts;
+  b.opened=Date.now();await DB.put('books',b);
+  R.n=page||b.lastPage||1;show('reader');$('reader').classList.toggle('imm',!!S.imm);
+  $('slider').max=b.pages;setView(S.view);wakeOn();await go(R.n)}
+ catch(e){toast('❌ '+e.message,4000);show('lib')}busy('')}
+function closeBook(){stopListen();RUN.stop=true;speechSynthesis&&speechSynthesis.cancel();wakeOff();R.book=null;R.pdf=null;show('lib');renderLib()}
+
+function updateNav(){const b=R.book;$('pgno').textContent=R.n+' / '+b.pages;$('slider').value=R.n;$('bPrev').style.opacity=R.n<=1?.4:1;$('bNext').style.opacity=R.n>=b.pages?.4:1;$('bMark').textContent=(b.marks||[]).includes(R.n)?'🔖✓':'🔖'}
+async function renderOrig(n,tok){
+ if(R.book.type==='txt'){$('cv').classList.add('hidden');const o=$('otext');o.classList.remove('hidden');o.textContent=R.texts[n-1]||'';return}
+ $('cv').classList.remove('hidden');$('otext').classList.add('hidden');
+ try{if(R.rtask){try{R.rtask.cancel()}catch(e){}}
+  const pg=await R.pdf.getPage(n);if(tok!==R.tok)return;
+  const wrap=$('pgwrap');const w=Math.max(200,wrap.clientWidth-12);const v0=pg.getViewport({scale:1});const sc=(w/v0.width)*S.zoom;const dpr=Math.min(window.devicePixelRatio||1,2);
+  const vp=pg.getViewport({scale:sc*dpr});const c=$('cv');c.width=vp.width;c.height=vp.height;c.style.width=(vp.width/dpr)+'px';c.style.height=(vp.height/dpr)+'px';
+  R.rtask=pg.render({canvasContext:c.getContext('2d'),viewport:vp});await R.rtask.promise}
+ catch(e){if(!(e&&e.name==='RenderingCancelledException'))toast('❌ ਪੰਨਾ ਨਹੀਂ ਖੁੱਲ੍ਹਿਆ')}}
+async function go(n){
+ if(!R.book)return;n=Math.max(1,Math.min(R.book.pages,parseInt(n)||1));
+ R.n=n;R.book.lastPage=n;DB.put('books',R.book);updateNav();const tok=++R.tok;$('stage').scrollTop=0;
+ $('trbody').innerHTML='';R.cur='';hideWordPop();
+ await renderOrig(n,tok);if(tok!==R.tok)return;markRead();
+ const c=await DB.get('trans',ckey(R.book,n));if(tok!==R.tok)return;
+ if(c){renderTr(c.text);prefetch(n)}else if(S.auto)doTranslate(n).catch(()=>{});else setTr('empty')}
+function markRead(){const t=dkey();if(ST.seenDay!==t){ST.seenDay=t;ST.seen={}}const k=ckey(R.book,R.n);if(ST.seen[k])return;ST.seen[k]=1;
+ ST.days[t]=(ST.days[t]||0)+1;ST.total++;const h=new Date().getHours();if(h>=23||h<4)ST.night=true;
+ const before=ST.days[t],g=+S.goal;ST.best=Math.max(ST.best,streak());if(before===g)toast('🎯 ਅੱਜ ਦਾ ਟੀਚਾ ਪੂਰਾ! ✅',3500);checkAch();renderHeader()}
+function setView(v){S.view=v;saveS();$('stage').dataset.view=v;document.querySelectorAll('.vt').forEach(b=>b.classList.toggle('on',b.dataset.v===v))}
+document.querySelectorAll('.vt').forEach(b=>b.onclick=()=>setView(b.dataset.v));
+const rerender=()=>{const tok=++R.tok;renderOrig(R.n,tok)};
+$('zIn').onclick=()=>{S.zoom=Math.min(3,+(S.zoom+.25).toFixed(2));saveS();rerender()};
+$('zOut').onclick=()=>{S.zoom=Math.max(.5,+(S.zoom-.25).toFixed(2));saveS();rerender()};
+$('fIn').onclick=()=>{S.fs=Math.min(32,S.fs+2);saveS();applyTheme()};$('fOut').onclick=()=>{S.fs=Math.max(14,S.fs-2);saveS();applyTheme()};
+let rzT;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(R.book&&!$('reader').classList.contains('hidden'))rerender()},300)});
+$('bBack').onclick=closeBook;$('bPrev').onclick=()=>go(R.n-1);$('bNext').onclick=()=>go(R.n+1);
+$('pgno').onclick=()=>{const v=prompt('ਪੰਨਾ ਨੰਬਰ (1–'+R.book.pages+')',R.n);if(v)go(v)};
+$('slider').oninput=e=>{$('pgno').textContent=e.target.value+' / '+R.book.pages};$('slider').onchange=e=>go(e.target.value);
+$('bMark').onclick=()=>{const m=R.book.marks=R.book.marks||[];const i=m.indexOf(R.n);if(i>=0)m.splice(i,1);else m.push(R.n);DB.put('books',R.book);updateNav();toast(i>=0?'ਬੁੱਕਮਾਰਕ ਹਟਾਇਆ':'🔖 ਬੁੱਕਮਾਰਕ ਲੱਗ ਗਿਆ')};
+$('bTr').onclick=()=>doTranslate(R.n,!!R.cur&&!!$('trbody').querySelector('.w')).catch(()=>{});
+/* swipe + immersive tap zones */
+let tx=0,ty=0;const stage=$('stage');
+stage.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+stage.addEventListener('touchend',e=>{if(S.zoom>1)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.abs(dx)>70&&Math.abs(dy)<60)go(R.n+(dx<0?1:-1))});
+stage.addEventListener('click',e=>{
+ const w=e.target.closest('.w');if(w){showWordPop(w);return}
+ if(!$('reader').classList.contains('imm'))return;const x=e.clientX/innerWidth;
+ if(x<.33)go(R.n-1);else if(x>.66)go(R.n+1);else $('reader').classList.remove('imm')});
+document.addEventListener('keydown',e=>{if($('reader').classList.contains('hidden')||!S.vol)return;
+ if(e.key==='AudioVolumeUp'||e.key==='VolumeUp'){e.preventDefault();go(R.n-1)}else if(e.key==='AudioVolumeDown'||e.key==='VolumeDown'){e.preventDefault();go(R.n+1)}
+ else if(e.key==='ArrowRight')go(R.n+1);else if(e.key==='ArrowLeft')go(R.n-1)});
+/* wake lock */
+let wl=null;async function wakeOn(){try{if(S.wake&&navigator.wakeLock)wl=await navigator.wakeLock.request('screen')}catch(e){}}
+function wakeOff(){try{wl&&wl.release()}catch(e){}wl=null}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&R.book)wakeOn()});
+
+/* =====================================================================
+   WORD POPUP
+===================================================================== */
+let WP={word:'',ctx:'',note:''};
+function showWordPop(el){document.querySelectorAll('.w.sel').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');
+ WP={word:cleanWord(el.textContent),ctx:(el.closest('p,h4')||el).textContent,note:''};if(!WP.word)return;
+ $('wpw').textContent=WP.word;$('wpx').textContent='';$('wordpop').classList.remove('hidden')}
+function hideWordPop(){$('wordpop').classList.add('hidden');document.querySelectorAll('.w.sel').forEach(x=>x.classList.remove('sel'))}
+$('wpC').onclick=hideWordPop;
+$('wpE').onclick=async()=>{$('wpx').innerHTML='<span class="dots"><span>●</span><span>●</span><span>●</span></span>';
+ try{const t=await gem(U('You are a Punjabi teacher. A learner tapped the word "'+WP.word+'" while reading. Context: "'+WP.ctx.slice(0,400)+'". In under 70 words: 1) meaning (English + simple Punjabi) 2) root / dictionary form 3) grammar (type, gender if noun, tense if verb) 4) one example sentence with English translation.'),{temp:.4});WP.note=t;$('wpx').textContent=t}
+ catch(e){if(!needKey(e))$('wpx').textContent='❌ '+e.message}};
+$('wpS').onclick=async()=>{await DB.put('vocab',{word:WP.word,note:WP.note,date:Date.now(),book:R.book?R.book.name:''});ST.words=(await DB.all('vocab')).length;checkAch();toast('💾 ਸ਼ਬਦ ਸੰਭਾਲਿਆ: '+WP.word)};
+
+/* =====================================================================
+   TTS / AUDIOBOOK
+===================================================================== */
+const TTS={on:false,sess:0,end:0,timer:null};
+const pv=()=>{try{return speechSynthesis.getVoices().find(v=>/^pa/i.test(v.lang))||null}catch(e){return null}};
+function speakText(text,done){speechSynthesis.cancel();const sess=++TTS.sess;
+ const parts=(text.match(/[^।.!?\n]+[।.!?]*/g)||[text]).map(x=>x.trim()).filter(Boolean);let i=0;
+ const nxt=()=>{if(sess!==TTS.sess)return;if(i>=parts.length){done&&done();return}
+  const u=new SpeechSynthesisUtterance(parts[i++]);u.lang='pa-IN';const v=pv();if(v)u.voice=v;u.rate=S.rate;
+  if(TTS.end){const left=TTS.end-Date.now();if(left<=0){stopListen();toast('😴 ਸਲੀਪ ਟਾਈਮਰ: ਬੰਦ');return}u.volume=left<30000?Math.max(.15,left/30000):1}
+  u.onend=nxt;u.onerror=nxt;speechSynthesis.speak(u)};nxt()}
+function stopSpeak(){TTS.sess++;try{speechSynthesis.cancel()}catch(e){}}
+function stopListen(){TTS.on=false;TTS.end=0;clearTimeout(TTS.timer);stopSpeak();$('listenbar').classList.add('hidden');$('bListen').classList.remove('on')}
+async function listenPage(){if(!TTS.on)return;let t;
+ try{const c=await DB.get('trans',ckey(R.book,R.n));t=c?c.text:await doTranslate(R.n)}catch(e){stopListen();return}
+ if(!TTS.on||!t)return;
+ speakText(t,()=>{if(!TTS.on)return;if(R.n>=R.book.pages){stopListen();toast('🎉 ਕਿਤਾਬ ਖ਼ਤਮ');return}go(R.n+1).then(listenPage)})}
+$('bListen').onclick=()=>{if(TTS.on){stopListen();return}
+ if(!('speechSynthesis' in window)){toast('ਇਸ ਡਿਵਾਈਸ ਉੱਤੇ ਆਵਾਜ਼ ਦੀ ਸਹੂਲਤ ਨਹੀਂ');return}
+ if(!pv())toast('ਪੰਜਾਬੀ ਆਵਾਜ਼ ਨਹੀਂ ਮਿਲੀ। Android: Settings → Text-to-speech ਵਿੱਚ Google ਪੰਜਾਬੀ ਇੰਸਟਾਲ ਕਰੋ',5000);
+ TTS.on=true;$('listenbar').classList.remove('hidden');$('bListen').classList.add('on');$('lRate').value=S.rate;wakeOn();listenPage()};
+$('lStop').onclick=stopListen;$('lRate').oninput=e=>{S.rate=+e.target.value;saveS()};
+$('lTimer').onchange=e=>{clearTimeout(TTS.timer);const m=+e.target.value;TTS.end=m?Date.now()+m*60000:0;if(m)TTS.timer=setTimeout(stopListen,m*60000+500)};
+
+/* =====================================================================
+   MORE MENU
+===================================================================== */
+const openSheet=id=>$(id).classList.add('open'),closeSheet=id=>$(id).classList.remove('open');
+document.querySelectorAll('.sheet').forEach(s=>s.addEventListener('click',e=>{if(e.target===s||e.target.hasAttribute('data-close'))s.classList.remove('open')}));
+$('bMore').onclick=()=>openSheet('shMore');
+async function allTrans(){const out=[];for(let i=1;i<=R.book.pages;i++){const c=await DB.get('trans',ckey(R.book,i));if(c)out.push({n:i,t:c.text})}return out}
+function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+$('shMore').addEventListener('click',async e=>{const b=e.target.closest('[data-m]');if(!b)return;const m=b.dataset.m;closeSheet('shMore');
+ if(m==='book')runBook();
+ else if(m==='profile')openProfile();
+ else if(m==='retr')doTranslate(R.n,true).catch(()=>{});
+ else if(m==='search')openSearch();
+ else if(m==='marks')openMarks();
+ else if(m==='imm')$('reader').classList.add('imm');
+ else if(m==='copy'){try{await navigator.clipboard.writeText(R.cur);toast('📋 ਕਾਪੀ ਹੋ ਗਿਆ')}catch(x){toast('ਕਾਪੀ ਨਹੀਂ ਹੋਇਆ')}}
+ else if(m==='share'){if(!R.cur)return toast('ਪਹਿਲਾਂ ਅਨੁਵਾਦ ਕਰੋ');try{await navigator.share({title:R.book.name,text:R.cur})}catch(x){try{await navigator.clipboard.writeText(R.cur);toast('ਸਾਂਝਾ ਨਹੀਂ ਹੋ ਸਕਿਆ — ਕਾਪੀ ਕਰ ਦਿੱਤਾ')}catch(y){}}}
+ else if(m==='speak'){if(R.cur)speakText(R.cur);else toast('ਪਹਿਲਾਂ ਅਨੁਵਾਦ ਕਰੋ')}
+ else if(m==='txt'){const a=await allTrans();if(!a.length)return toast('ਅਜੇ ਕੋਈ ਅਨੁਵਾਦ ਨਹੀਂ');download(R.book.name+' (ਪੰਜਾਬੀ).txt',new Blob([a.map(x=>'──── ਪੰਨਾ '+x.n+' ────\n'+x.t).join('\n\n')],{type:'text/plain;charset=utf-8'}));toast('⬇ ਤਿਆਰ')}
+ else if(m==='pdf')exportBilingual();
+ else if(m==='theme'){const o=['light','sepia','dark','black'];S.theme=o[(o.indexOf(S.theme)+1)%4];saveS();applyTheme()}});
+$('bExplain').onclick=()=>{openTutor();tutorAsk('explain')};
+async function exportBilingual(){const a=await allTrans();if(!a.length)return toast('ਅਜੇ ਕੋਈ ਅਨੁਵਾਦ ਨਹੀਂ');
+ let h='<!doctype html><html><head><meta charset="utf-8"><style>@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+Gurmukhi&display=swap");body{font-family:"Noto Serif Gurmukhi",serif;margin:0;color:#111}.p{page-break-after:always;padding:14mm}img{width:100%;border:1px solid #ccc}.t{font-size:15pt;line-height:2;margin-top:8mm}h3{font-family:sans-serif;color:#2c5f2d}</style></head><body>';
+ for(let i=0;i<a.length;i++){busy('🖨 ਤਿਆਰ ਹੋ ਰਿਹਾ ਹੈ '+(i+1)+'/'+a.length);let img='';
+  try{if(R.book.type==='pdf')img='<img src="data:image/jpeg;base64,'+await pageImage(a[i].n,1,.6)+'">'; else img='<div style="white-space:pre-wrap;font-family:sans-serif;font-size:10pt">'+esc(R.texts[a[i].n-1]||'')+'</div>'}catch(x){}
+  h+='<div class="p"><h3>ਪੰਨਾ '+a[i].n+'</h3>'+img+'<div class="t">'+a[i].t.split(/\n+/).map(p=>'<p>'+esc(p)+'</p>').join('')+'</div></div>'}
+ h+='</body></html>';busy('');
+ const f=document.createElement('iframe');f.style.cssText='position:fixed;width:0;height:0;border:0';document.body.appendChild(f);f.contentDocument.open();f.contentDocument.write(h);f.contentDocument.close();
+ await wait(1800);try{f.contentWindow.focus();f.contentWindow.print();toast('🖨 “Save as PDF” ਚੁਣੋ',5000)}catch(x){download(R.book.name+'.html',new Blob([h],{type:'text/html'}));toast('HTML ਫ਼ਾਈਲ ਡਾਊਨਲੋਡ ਹੋਈ')}setTimeout(()=>f.remove(),60000)}
+
+/* profile */
+function openProfile(){const p=R.book.profile||{};$('pTone').value=p.tone||2;$('pGloss').value=p.glossary||'';$('pNames').value=p.names||'';$('pNotes').value=p.notes||'';openSheet('shProf')}
+$('pSave').onclick=async()=>{R.book.profile={tone:+$('pTone').value,glossary:$('pGloss').value,names:$('pNames').value,notes:$('pNotes').value};await DB.put('books',R.book);closeSheet('shProf');toast('✅ ਪ੍ਰੋਫ਼ਾਈਲ ਸੰਭਾਲੀ। ਨਵੇਂ ਅਨੁਵਾਦਾਂ ਉੱਤੇ ਲਾਗੂ ਹੋਵੇਗੀ।',3500)};
+$('pSuggest').onclick=async()=>{busy('✨ ਸ਼ਬਦ-ਕੋਸ਼ ਬਣ ਰਿਹਾ ਹੈ…');
+ try{let s='';for(let i=1;i<=Math.min(4,R.book.pages)&&s.length<5000;i++)s+=(await pageText(i))+'\n\n';
+  const t=await gem(U('Below is sample text from a book. List the 15 most important recurring terms, concepts and proper names. For each give one line: source term → best Punjabi (Gurmukhi) choice in natural contemporary literary Punjabi (keep an English word in Gurmukhi script only if it is a settled term in modern Punjabi). Output only the lines.\n\n'+s.slice(0,6000)),{temp:.3});
+  $('pGloss').value=($('pGloss').value.trim()+'\n'+clean(t)).trim()}catch(e){if(!needKey(e))toast('❌ '+e.message)}busy('')};
+
+/* marks */
+function openMarks(){const m=(R.book.marks||[]).slice().sort((a,b)=>a-b);
+ $('marksBody').innerHTML=m.length?m.map(n=>'<div class="vw" style="display:flex;justify-content:space-between;align-items:center"><b>ਪੰਨਾ '+n+'</b><button class="btn sm" data-go="'+n+'">ਜਾਓ</button></div>').join(''):'<p class="empty">ਅਜੇ ਕੋਈ ਬੁੱਕਮਾਰਕ ਨਹੀਂ</p>';openSheet('shMarks')}
+$('marksBody').onclick=e=>{const g=e.target.dataset.go;if(g){closeSheet('shMarks');go(g)}};
+
+/* search */
+async function indexBook(){const b=R.book;if(b.indexed)return;
+ for(let i=1;i<=b.pages;i++){if(R.book!==b)return;busy('🔍 ਕਿਤਾਬ ਦੀ ਸੂਚੀ ਬਣ ਰਹੀ ਹੈ '+i+'/'+b.pages);try{await pageText(i)}catch(e){}}
+ b.indexed=true;await DB.put('books',b);busy('')}
+function openSearch(){$('qRes').innerHTML='';$('qInfo').textContent='';openSheet('shSearch');setTimeout(()=>$('qIn').focus(),200)}
+$('qGo').onclick=async()=>{const q=$('qIn').value.trim().toLowerCase();if(q.length<2)return;await indexBook();
+ const b=R.book,res=[];
+ const tr=await DB.getRange('trans',b.key+':'),px=await DB.getRange('ptext',b.key+':');
+ const scan=(rows,tag)=>rows.forEach(r=>{const t=r.text,l=t.toLowerCase();let i=l.indexOf(q);if(i<0)return;const n=+r.key.split(':')[1];res.push({n,tag,s:t.slice(Math.max(0,i-40),i+q.length+60).replace(/\n/g,' '),i:i})});
+ scan(tr,'ਪੰਜਾਬੀ');scan(px,'ਮੂਲ');if(b.type==='txt')R.texts.forEach((t,k)=>{if(t.toLowerCase().includes(q)&&!res.find(r=>r.n===k+1&&r.tag==='ਮੂਲ')){const i=t.toLowerCase().indexOf(q);res.push({n:k+1,tag:'ਮੂਲ',s:t.slice(Math.max(0,i-40),i+q.length+60).replace(/\n/g,' ')})}});
+ res.sort((a,b)=>a.n-b.n);$('qInfo').textContent=res.length+' ਨਤੀਜੇ'+(res.length>100?' (ਪਹਿਲੇ 100)':'');
+ $('qRes').innerHTML=res.slice(0,100).map(r=>'<div class="vw" data-go="'+r.n+'"><b>ਪੰਨਾ '+r.n+'</b> <span class="small">('+r.tag+')</span><div class="small" style="color:var(--ink)">…'+esc(r.s)+'…</div></div>').join('')};
+$('qIn').onkeydown=e=>{if(e.key==='Enter')$('qGo').click()};
+$('qRes').onclick=e=>{const v=e.target.closest('[data-go]');if(v){closeSheet('shSearch');go(v.dataset.go)}};
+$('runstop').onclick=()=>{RUN.stop=true};
+
+/* =====================================================================
+   TUTOR  ਗੁਰੂ ਜੀ
+===================================================================== */
+const GURU=`You are 'Guru Ji' (ਗੁਰੂ ਜੀ), a warm, encouraging language tutor inside a book-reading app. You are an expert in Punjabi (Gurmukhi) grammar, vocabulary, pronunciation, translation quality and language learning. Answer clearly and briefly with examples. Use Punjabi with English explanations. Short paragraphs and lists. When you suggest improved Punjabi wording, use natural contemporary literary Punjabi: dignified, not archaic, not slangy.`;
+const T={hist:[]};
+function tutorCtx(){if(!R.book)return '';return '\n\nCURRENT READING CONTEXT\nBook: '+R.book.name+'\nPage: '+R.n+'\nOriginal text (start): '+((T.orig||'').slice(0,1200))+'\nPunjabi translation (start): '+(R.cur||'').slice(0,1200)}
+function chatRender(){const c=$('chat');c.innerHTML=T.hist.map(m=>'<div class="msg '+(m.r==='u'?'u':'a')+'">'+md(m.t)+'</div>').join('')+(T.typing?'<div class="msg a dots"><span>●</span><span>●</span><span>●</span></div>':'');c.scrollTop=c.scrollHeight}
+async function tutorSend(text){if(!text.trim())return;T.hist.push({r:'u',t:text});T.typing=true;chatRender();
+ if(R.book)try{T.orig=await pageText(R.n)}catch(e){}
+ try{const contents=T.hist.slice(-12).map(m=>({role:m.r==='u'?'user':'model',parts:[{text:m.t}]}));
+  const t=await gem(contents,{system:GURU+tutorCtx(),temp:.5});T.hist.push({r:'a',t})}
+ catch(e){if(!needKey(e))T.hist.push({r:'a',t:'❌ '+e.message})}T.typing=false;chatRender()}
+const QP={explain:'Explain this page: the main ideas in simple Punjabi, then any difficult words.',words:'Pick 8 useful words from this page. For each: the word, meaning, and one short example sentence with English.',grammar:'Choose one grammar point that appears in this page and teach it with 2 examples (Punjabi + English).',fix:'Review the Punjabi translation of this page against the original. List specific weak or unnatural phrases and give better versions in natural contemporary literary Punjabi (not archaic, not slangy). Point out anything that looks missing.',quiz:'Quiz me with 3 short questions from this page. Ask one at a time and wait for my answer.'};
+function tutorAsk(k){if(!R.book)return tutorSend('ਮੈਨੂੰ ਪੰਜਾਬੀ ਸਿੱਖਣ ਲਈ ਇੱਕ ਛੋਟਾ ਸੁਝਾਅ ਦਿਓ।');tutorSend(QP[k])}
+function openTutor(){openSheet('shTutor');if(!T.hist.length){T.hist.push({r:'a',t:'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ! 🙏 ਮੈਂ ਗੁਰੂ ਜੀ ਹਾਂ। '+(R.book?'ਤੁਸੀਂ “'+R.book.name+'” ਦਾ ਪੰਨਾ '+R.n+' ਪੜ੍ਹ ਰਹੇ ਹੋ — ਹੇਠਾਂ ਕੋਈ ਵੀ ਬਟਨ ਦਬਾਓ ਜਾਂ ਸਵਾਲ ਪੁੱਛੋ।':'ਪੰਜਾਬੀ ਬਾਰੇ ਕੁਝ ਵੀ ਪੁੱਛੋ।')})}chatRender()}
+$('bGuru').onclick=openTutor;$('tSend').onclick=()=>{const v=$('tIn').value;$('tIn').value='';tutorSend(v)};$('tIn').onkeydown=e=>{if(e.key==='Enter')$('tSend').click()};
+document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>tutorAsk(b.dataset.q));
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.t));
+ if(b.dataset.t==='words')renderWords();if(b.dataset.t==='quiz')quizHome();if(b.dataset.t==='lesson')lessonHome()});
+async function renderWords(){const v=(await DB.all('vocab')).sort((a,b)=>b.id-a.id);ST.words=v.length;
+ $('p-words').innerHTML='<p class="small">'+v.length+' ਸ਼ਬਦ ਸੰਭਾਲੇ ਹੋਏ ਹਨ। ਕਿਸੇ ਵੀ ਸ਼ਬਦ ਉੱਤੇ ਦਬਾਓ।</p>'+(v.length?v.map(x=>'<div class="vw" data-id="'+x.id+'"><div style="display:flex;justify-content:space-between"><b>'+esc(x.word)+'</b><button class="x" data-del="'+x.id+'">🗑</button></div><div class="small">'+esc(x.book||'')+'</div><div class="n">'+esc(x.note||'(ਕੋਈ ਨੋਟ ਨਹੀਂ)')+'</div></div>').join(''):'<p class="empty">ਪੜ੍ਹਦੇ ਸਮੇਂ ਕਿਸੇ ਵੀ ਸ਼ਬਦ ਉੱਤੇ ਦਬਾਓ, ਫਿਰ 💾 ਸੰਭਾਲੋ।</p>')}
+$('p-words').onclick=async e=>{const d=e.target.dataset.del;if(d){e.stopPropagation();await DB.del('vocab',+d);ST.words=(await DB.all('vocab')).length;renderWords();return}const v=e.target.closest('.vw');if(v)v.classList.toggle('open')};
+async function quizHome(){const v=(await DB.all('vocab')).sort((a,b)=>b.id-a.id).slice(0,15);const p=$('p-quiz');
+ if(v.length<4){p.innerHTML='<p class="empty">🃏 ਕੁਇਜ਼ ਲਈ ਘੱਟੋ-ਘੱਟ 4 ਸੰਭਾਲੇ ਸ਼ਬਦ ਚਾਹੀਦੇ ਹਨ।<br>ਹੁਣ '+v.length+' ਹਨ।</p>';return}
+ p.innerHTML='<p class="empty">ਤੁਹਾਡੇ ਆਪਣੇ ਸ਼ਬਦਾਂ ਤੋਂ 5 ਸਵਾਲ ਬਣਨਗੇ।</p><button class="btn" id="qStart">▶ ਸ਼ੁਰੂ ਕਰੋ</button>';$('qStart').onclick=()=>startQuiz(v)}
+async function startQuiz(v){const p=$('p-quiz');p.innerHTML='<p class="empty dots">ਸਵਾਲ ਬਣ ਰਹੇ ਹਨ <span>●</span><span>●</span><span>●</span></p>';
+ try{const t=await gem(U('Create 5 multiple-choice questions (meanings and fill-in-the-blank) to test a learner on these Punjabi words they saved. Words: '+v.map(x=>x.word+(x.note?' ('+x.note.slice(0,100).replace(/\n/g,' ')+')':'')).join('; ')+'\nReturn ONLY a JSON array: [{"q":"question","options":["a","b","c","d"],"a":0}] where "a" is the index of the correct option. Questions may mix English and Gurmukhi.'),{json:true,temp:.5});
+  let arr;try{arr=JSON.parse(t)}catch(e){const m=t.match(/\[[\s\S]*\]/);arr=JSON.parse(m[0])}
+  arr=arr.filter(x=>x&&x.q&&Array.isArray(x.options)&&x.options.length>=2).slice(0,5);if(!arr.length)throw new Error('ਸਵਾਲ ਨਹੀਂ ਬਣੇ');
+  let i=0,sc=0;const ask=()=>{if(i>=arr.length){p.innerHTML='<div class="empty"><div style="font-size:48px">'+(sc===arr.length?'🏆':'🎯')+'</div><b>'+sc+' / '+arr.length+'</b><br>'+(sc===arr.length?'ਸ਼ਾਬਾਸ਼! ਪੂਰੇ ਅੰਕ!':'ਵਧੀਆ ਕੋਸ਼ਿਸ਼!')+'</div><button class="btn" id="qAgain">🔄 ਦੁਬਾਰਾ ਖੇਡੋ</button>';
+    if(sc===arr.length){ST.quizPerfect=true;checkAch();confetti()}$('qAgain').onclick=quizHome;return}
+   const q=arr[i];p.innerHTML='<p class="small">ਸਵਾਲ '+(i+1)+' / '+arr.length+'</p><p style="font-size:17px;line-height:1.8">'+esc(q.q)+'</p>'+q.options.map((o,k)=>'<button class="opt" data-k="'+k+'">'+esc(o)+'</button>').join('');
+   p.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const k=+b.dataset.k,ok=k===+q.a;p.querySelectorAll('.opt').forEach(x=>x.disabled=true);b.classList.add(ok?'ok':'bad');if(!ok){const c=p.querySelector('.opt[data-k="'+q.a+'"]');if(c)c.classList.add('ok')}else sc++;setTimeout(()=>{i++;ask()},1100)})};ask()}
+ catch(e){if(!needKey(e))p.innerHTML='<p class="empty">❌ '+esc(e.message)+'</p><button class="btn" onclick="quizHome()">ਮੁੜ ਕੋਸ਼ਿਸ਼</button>'}}
+async function lessonHome(){const p=$('p-lesson');const c=ls.get('ptr_lesson',null);if(c&&c.d===dkey()){p.innerHTML='<div class="msg a" style="max-width:100%">'+md(c.t)+'</div>';return}
+ p.innerHTML='<p class="empty">ਅੱਜ ਦਾ 5 ਮਿੰਟ ਦਾ ਪਾਠ ਤੁਹਾਡੇ ਸ਼ਬਦਾਂ ਤੋਂ ਬਣੇਗਾ।</p><button class="btn" id="lGo">🎓 ਅੱਜ ਦਾ ਪਾਠ</button>';
+ $('lGo').onclick=async()=>{p.innerHTML='<p class="empty dots">ਪਾਠ ਬਣ ਰਿਹਾ ਹੈ <span>●</span><span>●</span><span>●</span></p>';const v=(await DB.all('vocab')).sort((a,b)=>b.id-a.id).slice(0,8);
+  try{const t=await gem(U('Create a 5-minute Punjabi lesson. '+(v.length?'Build it from these words the learner saved: '+v.map(x=>x.word).join(', ')+'.':'The learner has no saved words yet: use a beginner topic.')+' Structure: 1) one grammar point with 2 examples (Punjabi + English) 2) 3 fill-in-the-blank exercises 3) answers at the end under the heading "ਜਵਾਬ". Keep it short and encouraging.'),{system:GURU,temp:.5});ls.set('ptr_lesson',{d:dkey(),t});lessonHome()}
+  catch(e){if(!needKey(e))p.innerHTML='<p class="empty">❌ '+esc(e.message)+'</p>'}}}
+
+/* =====================================================================
+   SETTINGS / STATS / BACKUP
+===================================================================== */
+function openSettings(){$('sKey').value=ls.get('ptr_key','');$('sModel').value=S.model;$('sGoal').value=S.goal;$('sTheme').value=S.theme;$('sSerif').checked=S.serif;$('sAuto').checked=S.auto;$('sVol').checked=S.vol;$('sWake').checked=S.wake;$('sImm').checked=S.imm;openSheet('shSet')}
+$('bSet').onclick=$('bSet2').onclick=openSettings;
+$('sSave').onclick=()=>{ls.set('ptr_key',$('sKey').value.trim());S.model=$('sModel').value;S.goal=+$('sGoal').value;S.theme=$('sTheme').value;S.serif=$('sSerif').checked;S.auto=$('sAuto').checked;S.vol=$('sVol').checked;S.wake=$('sWake').checked;S.imm=$('sImm').checked;saveS();applyTheme();renderHeader();closeSheet('shSet');toast('✅ ਸੰਭਾਲਿਆ')};
+$('sReset').onclick=()=>{if(confirm('ਸਾਰੇ ਅੰਕੜੇ ਅਤੇ ਇਨਾਮ ਮਿਟਾਉਣੇ ਹਨ?')){Object.assign(ST,{days:{},seen:{},translated:0,total:0,best:0,ach:{},finished:{},quizPerfect:false,night:false});saveST();renderHeader();toast('ਰੀਸੈੱਟ ਹੋ ਗਿਆ')}};
+$('sBack').onclick=async()=>{const data={v:1,trans:await DB.all('trans'),vocab:await DB.all('vocab'),stats:ST,settings:S,books:(await DB.all('books')).map(b=>({key:b.key,name:b.name,pages:b.pages,profile:b.profile,marks:b.marks}))};
+ download('punjabi-reader-backup-'+dkey()+'.json',new Blob([JSON.stringify(data)],{type:'application/json'}));toast('💾 ਬੈਕਅੱਪ ਬਣ ਗਿਆ (API key ਸ਼ਾਮਲ ਨਹੀਂ; ਕਿਤਾਬਾਂ ਦੀਆਂ ਫ਼ਾਈਲਾਂ ਵੀ ਨਹੀਂ)',4500)};
+$('sRest').onclick=()=>$('restF').click();
+$('restF').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const d=JSON.parse(await f.text());
+ for(const t of d.trans||[])await DB.put('trans',t);for(const v of d.vocab||[]){delete v.id;await DB.put('vocab',v)}
+ if(d.stats)Object.assign(ST,d.stats);saveST();renderHeader();toast('📥 ਰੀਸਟੋਰ ਹੋ ਗਿਆ (ਅਨੁਵਾਦ ਤਦ ਦਿਸਣਗੇ ਜਦ ਉਹੀ ਕਿਤਾਬ ਦੁਬਾਰਾ ਜੋੜੋ)',5000)}catch(x){toast('❌ ਫ਼ਾਈਲ ਪੜ੍ਹੀ ਨਹੀਂ ਗਈ')}};
+$('bStats').onclick=async()=>{ST.words=(await DB.all('vocab')).length;const days=[];const dn=['ਐਤ','ਸੋਮ','ਮੰਗਲ','ਬੁੱਧ','ਵੀਰ','ਸ਼ੁੱਕਰ','ਸ਼ਨਿ'];
+ for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push({l:dn[d.getDay()],n:ST.days[dkey(d)]||0})}const mx=Math.max(5,...days.map(d=>d.n));
+ $('statsBody').innerHTML='<div class="cards"><div><b>'+ST.total+'</b><span>ਪੜ੍ਹੇ ਪੰਨੇ</span></div><div><b>'+ST.translated+'</b><span>ਅਨੁਵਾਦ ਹੋਏ ਪੰਨੇ</span></div><div><b>'+Object.keys(ST.finished).length+'</b><span>ਪੂਰੀਆਂ ਕਿਤਾਬਾਂ</span></div><div><b>'+ST.words+'</b><span>ਸੰਭਾਲੇ ਸ਼ਬਦ</span></div><div><b>🔥 '+streak()+'</b><span>ਮੌਜੂਦਾ ਲੜੀ</span></div><div><b>🏅 '+ST.best+'</b><span>ਸਭ ਤੋਂ ਵਧੀਆ ਲੜੀ</span></div></div>'+
+ '<div class="week">'+days.map(d=>'<div><small>'+d.n+'</small><i style="height:'+Math.round(d.n/mx*85)+'%"></i><span>'+d.l+'</span></div>').join('')+'</div><h3 style="font-size:14px">🏆 ਇਨਾਮ</h3><div class="ach">'+ACH.map(a=>'<div class="'+(ST.ach[a.id]?'on':'')+'"><span>'+a.ic+'</span>'+a.n+'</div>').join('')+'</div>';openSheet('shStats')};
+
+/* =====================================================================
+   INIT + PWA
+===================================================================== */
+(async function init(){
+ applyTheme();
+ if(typeof pdfjsLib!=='undefined')pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+ try{await DB.open()}catch(e){toast('❌ ਸਟੋਰੇਜ ਨਹੀਂ ਖੁੱਲ੍ਹੀ (private mode?)',5000);return}
+ ST.words=(await DB.all('vocab')).length;
+ await renderLib();
+ if('serviceWorker' in navigator)navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+ if(!ls.get('ptr_key',''))setTimeout(()=>toast('👋 ਸ਼ੁਰੂ ਕਰਨ ਲਈ ⚙️ ਵਿੱਚ Gemini API key ਪਾਓ',4500),800);
+ try{speechSynthesis.getVoices()}catch(e){}
+})();
+</script>
+</body>
+</html>
